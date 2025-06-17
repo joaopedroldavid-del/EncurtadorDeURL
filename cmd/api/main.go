@@ -1,11 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"EncurtadorDeURL/internal/api"
+	"EncurtadorDeURL/internal/store"
 	"log/slog"
-	"myFirstGoProject/EncurtadorDeURL/api"
 	"net/http"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 
@@ -18,13 +20,14 @@ func main(){
 }
 
 func run() error {
-	fmt.Println("Step 0")
 
-	db := make(map[string]string)
-
-	handler := api.NewHandler(db)
-	
-	fmt.Println("Step 1")
+	rdb := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+		Password: "", 
+		DB: 0, 
+	})
+	store := store.NewStore(rdb)
+	handler := api.NewHandler(store)
 	
 	s := http.Server{
 		ReadTimeout: 10 * time.Second,
@@ -34,13 +37,9 @@ func run() error {
 		Handler: handler,
 	}
 	
-	fmt.Println("Step 2")
-	
 	if err := s.ListenAndServe(); err != nil {
 		return err
 	}
-	
-	fmt.Println("Step 3")
 	
 	return nil	
 }
